@@ -44,6 +44,13 @@ const ContentSchema = new Schema({
 // Create Mongoose model
 const Content = model('Content', ContentSchema);
 
+const ImageSchema = new Schema({
+    data: Buffer, // Image data
+    contentType: String, // Image MIME type
+});
+//Create Mongoose model
+const Image = model('Image', ImageSchema);
+
 const app = express(); 
 
 // Middlewares
@@ -66,6 +73,16 @@ app.post('/api/saveContent', async (req, res) => {
     try {
         await newContent.save();
         res.status(200).json({ message: 'Content saved successfully' });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+//GET route to fetch DB image
+app.get('/api/images', async (req, res) => {
+    try {
+        const images = await Image.find({}).lean();
+        res.status(200).json(images);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }

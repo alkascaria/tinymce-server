@@ -1,7 +1,18 @@
 {
   "dependencies": {
+    "body-parser": "^1.20.2",
     "cors": "^2.8.5",
     "express": "^4.18.2",
-    "mongoose": "^7.2.0"
-  }
+    "mongoose": "^7.2.2"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "name": "tinymce-server",
+  "description": "Node.js and npm should be installed",
+  "version": "1.0.0",
+  "main": "server.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }
