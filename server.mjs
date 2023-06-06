@@ -5,17 +5,18 @@ import cors from 'cors';
 const port = 5000; //Fixed port
 const url = 'mongodb://127.0.0.1:27017/'; //DB connection url
 
+//Establishing the DB connection
 mongoose.connect( url, {
     dbname:'tinymce-db',
     useNewUrlParser: true,
     useUnifiedTopology: true
 })
-  .then(() => {
-    console.log('Connected to yourDB-name database');
-  })
-  .catch((error) => {
+.then(() => {
+    console.log('Connected to the database');
+})
+.catch((error) => {
     console.error('Error connecting to database:', error);
-  });
+});
 
 /* // To check is mongo is getting connected
 const checkDBConnection = () => {
@@ -36,25 +37,27 @@ const checkDBConnection = () => {
 console.log(checkDBConnection());
  */ 
 
-// Define Mongoose schema for TinyMCE content
+//Mongoose schema and model for SaveToDB
 const ContentSchema = new Schema({
-    content: String
+    id: String,
+    name: String,
+    date: Date,
+    content: String,
 });
-
-// Create Mongoose model
 const Content = model('Content', ContentSchema);
 
+//Mongoose schema and model for ImageDB
 const ImageSchema = new Schema({
     data: Buffer, // Image data
     contentType: String, // Image MIME type
 });
-//Create Mongoose model
 const Image = model('Image', ImageSchema);
 
+//Middlewares
 const app = express(); 
+app.use(cors()); 
+app.use(express.json());
 
-// Middlewares
-app.use(cors());
 /* 
 //Use if there is an error
 app.use(cors({
@@ -62,13 +65,12 @@ app.use(cors({
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
 }));
- */
-app.use(express.json());
+*/
 
-// POST route to save TinyMCE content
+// POST route to save TinyMCE content to DB - SaveToDB
 app.post('/api/saveContent', async (req, res) => {
-    const { content } = req.body;
-    const newContent = new Content({ 'content' : content });
+    const { id, name,date, content } = req.body;
+    const newContent = new Content({ id,name,date,content });
 
     try {
         await newContent.save();
@@ -78,7 +80,7 @@ app.post('/api/saveContent', async (req, res) => {
     }
 });
 
-//GET route to fetch DB image
+//GET route to fetch symbol from DB - ImageDB
 app.get('/api/images', async (req, res) => {
     try {
         const images = await Image.find({}).lean();
