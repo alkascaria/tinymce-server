@@ -41,7 +41,7 @@ console.log(checkDBConnection());
 const ContentSchema = new Schema({
     id: String,
     name: String,
-    date: Date,
+    date: String,
     content: String,
 });
 const Content = model('Content', ContentSchema);
@@ -89,6 +89,18 @@ app.get('/api/images', async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 });
+
+// GET route to fetch DB contents
+app.get('/api/contents', async (req, res) => {
+    try {
+      const contents = await Content.find({}).lean();
+      console.log(contents);
+      res.status(200).json(contents);
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+  
  
 // Server listening
 app.listen(port,() => {
