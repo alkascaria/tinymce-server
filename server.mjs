@@ -23,40 +23,27 @@ const app = express();
 app.use(cors()); 
 app.use(express.json());
 
-// Error Handling Middleware
-app.use((err, req, res, next) => {
-
-  console.error(err.stack);
-  // in a development environment, sending the detailed error
-  if (process.env.NODE_ENV === 'development') {
-      res.status(500).send(err.message);
-  } else {
-      // in a production environment, a generic error message
-      res.status(500).send('Internal Server Error');
-  }
-});
-
 // Mongoose schema and model for ImageDB
 const ImageSchema = new Schema({
 
-    data: { type: Buffer, required: true }, // Image data
-    contentType: { type: String, required: true }, // Image MIME type
+  data: { type: Buffer, required: true }, // Image data
+  contentType: { type: String, required: true }, // Image MIME type
 });
 const Image = model('Image', ImageSchema);
 
 // Define the schemas for ContentDB
-const GroupSchema = new mongoose.Schema({ name: String });
-const Group = mongoose.model('Group', GroupSchema);
+const GroupSchema = new Schema({ name: String });
+const Group = model('Group', GroupSchema);
 
-const ContentSchema = new mongoose.Schema({
+const ContentSchema = new Schema({
 
   name: String,
   date: Date,
   content: String,
-  groupID: { type: mongoose.Schema.Types.ObjectId, ref: 'Group' },
+  groupID: { type: Schema.Types.ObjectId, ref: 'Group' },
 
 });
-const Content = mongoose.model('Content', ContentSchema);
+const Content = model('Content', ContentSchema);
 
 // POST route to save DB contents - ContentDB
 app.post('/api/saveContent', async (req, res, next) => {
@@ -161,6 +148,17 @@ app.get('/api/checkContent/:name/:groupName', async (req, res, next) => {
     next(err); // Pass error to error handling middleware
   }
 });
+
+// GET route to fetch all groups - ContentDB
+app.get('/api/groups', async (req, res, next) => {
+  try {
+    const groups = await Group.find({}).lean(); // Fetch all groups from the database
+    res.status(200).json(groups); // Send the fetched groups as a JSON response
+  } catch (err) {
+    next(err); // Pass the error to the error handling middleware
+  }
+});
+
   
 // GET route to fetch symbol from DB - ImageDB
 app.get('/api/images', async (req, res, next) => {
@@ -171,6 +169,19 @@ app.get('/api/images', async (req, res, next) => {
     res.status(200).json(images);
   } catch (err) {
     next(err); // Pass error to error handling middleware
+  }
+});
+
+// Error Handling Middleware
+app.use((err, req, res, next) => {
+
+  console.error(err.stack);
+  // in a development environment, sending the detailed error
+  if (process.env.NODE_ENV === 'development') {
+      res.status(500).send(err.message);
+  } else {
+      // in a production environment, a generic error message
+      res.status(500).send('Internal Server Error');
   }
 });
 
