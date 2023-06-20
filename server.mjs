@@ -7,11 +7,9 @@ const url = 'mongodb://127.0.0.1:27017/'; // Default to local MongoDB
 
 // Establishing the DB connection
 mongoose.connect( url, {
-
   dbname:'tinymce-db',
   useNewUrlParser: true,
   useUnifiedTopology: true
-
 }).then(() => {
   console.log('Connected to the database');
 }).catch((error) => {
@@ -31,12 +29,12 @@ const ImageSchema = new Schema({
 });
 const Image = model('Image', ImageSchema);
 
-// Define the schemas for ContentDB
+// Define the schemas for Experiment Group
 const GroupSchema = new Schema({ name: String });
 const Group = model('Group', GroupSchema);
 
+//Define the schemas for ContentDB
 const ContentSchema = new Schema({
-
   name: String,
   date: Date,
   content: String,
@@ -44,6 +42,17 @@ const ContentSchema = new Schema({
 
 });
 const Content = model('Content', ContentSchema);
+
+async function findGroupByName(groupName) {
+  const group = await Group.findOne({ name: groupName });
+
+  if (!group) {
+    throw new Error('Group not found');
+  }
+
+  return group;
+}
+
 
 // POST route to save DB contents - ContentDB
 app.post('/api/saveContent', async (req, res, next) => {
@@ -84,15 +93,11 @@ app.put('/api/updateContent/:name', async (req, res, next) => {
       return res.status(400).json({ message: 'All fields are required' });
     }
   
-    // Find the group by name
-    const group = await Group.findOne({ name: groupID });
-  
-    // If the group does not exist, return an error
-    if (!group) {
-      return res.status(404).json({ message: 'Group not found' });
-    }
+    const group = await findGroupByName(req.body.groupID);
+    console.log('update group'+group);
   
     const existingContent = await Content.findOne({ name: name }).populate('groupID');
+    console.log('updategroupis' +groupID);
   
     if (existingContent) {
 
@@ -158,6 +163,46 @@ app.get('/api/groups', async (req, res, next) => {
     next(err); // Pass the error to the error handling middleware
   }
 });
+
+// DELETE route to delete DB contents - ContentDB
+// DELETE route to delete group and/or document - ContentDB
+app.delete('/api/delete', async (req, res, next) => {
+  const { groupName, docName } = req.body;
+
+  try {
+    // Validate request body
+    if (!groupName) {
+      return res.status(400).json({ message: 'Group name is required' });
+    }
+
+    // Find the group
+    const group = await Group.findOne({ name: groupName });
+
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    if (docName) {
+      // If a document name is provided, delete the specific document in the group
+      const result = await Content.deleteOne({ name: docName, groupID: group._id });
+      
+      if (result.deletedCount === 0) {
+        return res.status(404).json({ message: 'Document not found in the group' });
+      }
+    } else {
+      // If no document name is provided, delete the group and all documents in the group
+      await Group.deleteOne({ _id: group._id });
+      await Content.deleteMany({ groupID: group._id });
+    }
+
+    res.status(200).json({ message: 'Delete operation successful' });
+  } catch (err) {
+    next(err); // Pass error to error handling middleware
+  }
+});
+
+
+
 
   
 // GET route to fetch symbol from DB - ImageDB
