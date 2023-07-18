@@ -22,12 +22,12 @@ app.use(cors());
 app.use(express.json());
 
 // Mongoose schema and model for ImageDB
-const ImageSchema = new Schema({
-
-  data: { type: Buffer, required: true }, // Image data
-  contentType: { type: String, required: true }, // Image MIME type
+const PiktogrammSchema = new Schema({
+  _id: String,
+  description: String,
+  symbol: String
 });
-const Image = model('Image', ImageSchema);
+const Piktogramm = mongoose.model('Piktogramm', PiktogrammSchema);
 
 // Define the schemas for Experiment Group
 const GroupSchema = new Schema({ name: String });
@@ -42,6 +42,33 @@ const ContentSchema = new Schema({
 
 });
 const Content = model('Content', ContentSchema);
+
+const HsatzSchema = new Schema({
+  _id: String,
+  description: String,
+  pharsen_reference_id: {
+    type: String,
+    default: null
+  },
+  ghs_reference_id: String,
+  psätze_id: {
+    type: [String],
+    default: null
+  }
+});
+const Hsatz = model('Hsatz', HsatzSchema);
+
+const PsatzSchema = new Schema ({
+  _id: String,
+  description: String
+});
+const Psatz = model('Psatz', PsatzSchema);
+
+const EuhsatzSchema = new Schema ({
+  _id: String,
+  description: String
+});
+const Euhsatz = model('Euhsatz', PsatzSchema);
 
 async function findGroupByName(groupName) {
   const group = await Group.findOne({ name: groupName });
@@ -200,20 +227,71 @@ app.delete('/api/delete', async (req, res, next) => {
     next(err); // Pass error to error handling middleware
   }
 });
-
-
-
-
   
 // GET route to fetch symbol from DB - ImageDB
-app.get('/api/images', async (req, res, next) => {
+app.get('/api/piktogramm', async (req, res, next) => {
 
   try {
-
-    const images = await Image.find({}).lean();
+    const images = await Piktogramm.find({}).lean();
     res.status(200).json(images);
   } catch (err) {
     next(err); // Pass error to error handling middleware
+  }
+});
+
+app.get('/api/hsatz', async (req, res, next) => {
+
+  try {
+    const hsatz = await Hsatz.find({}).lean();
+    res.status(200).json(hsatz);
+  } catch (err) {
+    next(err); // Pass error to error handling middleware
+  }
+});
+
+app.get('/api/psatz', async (req, res, next) => {
+  try {
+    const psatz = await Psatz.find({}).lean();
+    res.status(200).json(psatz);
+  } catch (err) {
+    next(err); 
+  }
+});
+
+app.get('/api/euhsatz', async (req, res, next) => {
+  try {
+    const euhsatz = await Euhsatz.find({}).lean();
+    res.status(200).json(euhsatz);
+  } catch (err) {
+    next(err); 
+  }
+});
+
+app.get('/api/hsatz/:ghs_reference_id', async (req, res, next) => {
+  try {
+      const hsatz = await Hsatz.find({ ghs_reference_id: req.params.ghs_reference_id }).lean();
+      console.log('Here'+hsatz);
+      if (hsatz && hsatz.length > 0) {
+          res.status(200).json(hsatz);
+      } else {
+          res.status(404).json({ message: "No matching Hsatz found." });
+      }
+  } catch (err) {
+      next(err); // Pass error to error handling middleware
+  }
+});
+
+app.get('/api/psatz/:p_id', async (req, res, next) => {
+  try {
+      const psatz = await Psatz.findById(req.params.p_id).lean();
+      console.log('Here'+psatz);
+      if (psatz) {
+          res.status(200).json(psatz);
+      } else {
+          res.status(404).json({ message: "No matching Psatz found." });
+      }
+  } catch (err) {
+      next(err); // Pass error to error handling middleware
   }
 });
 
